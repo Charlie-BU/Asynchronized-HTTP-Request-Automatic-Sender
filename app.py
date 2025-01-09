@@ -4,7 +4,7 @@ import pathlib
 from robyn import Robyn, ALLOW_CORS, jsonify
 from robyn.templating import JinjaTemplate
 
-from async_request import prepare_data, operate_task, get_current_status
+from async_request import prepare_data, operate_task, get_status
 
 # 配置模板
 current_file_path = pathlib.Path(__file__).parent.resolve()
@@ -85,7 +85,7 @@ async def stop():
 # 监听状态
 @app.get("/listen")
 async def listen():
-    current_status = get_current_status()
+    current_status, first_status = get_status()
     # TODO: 判断结果
     # if 成功:
     #     await stop()
@@ -93,6 +93,7 @@ async def listen():
     return jsonify({
         "status": 200,
         "current_status": current_status,
+        "first_status": first_status,
     })
 
 

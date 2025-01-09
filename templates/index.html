@@ -36,21 +36,21 @@
         </div>
 
         <div class="form-group">
-            <label for="raw_params">URL参数（必须为 JSON 格式字符串）</label>
+            <label for="raw_params">URL参数（JSON格式字符串或xxx=yyy&aaa=bbb格式）</label>
             <textarea
                     id="raw_params"
                     name="raw_params"
-                    placeholder='eg. {key: value}'
+                    placeholder='eg. {"key": value} / xxx=yyy&aaa=bbb'
                     rows="5"
             ></textarea>
         </div>
 
         <div class="form-group">
-            <label for="raw_data">请求Data（必须为 JSON 格式字符串）</label>
+            <label for="raw_data">请求Data（JSON格式字符串或xxx=yyy&aaa=bbb格式）</label>
             <textarea
                     id="raw_data"
                     name="raw_data"
-                    placeholder='eg. {key: value}'
+                    placeholder='eg. {"key": value} / xxx=yyy&aaa=bbb'
                     rows="5"
             ></textarea>
         </div>
@@ -119,12 +119,29 @@
 
         let url_params;
         if (raw_params) {
-            url_params = JSON.parse(raw_params);
+            try {
+                url_params = JSON.parse(raw_params);
+            } catch (e) {
+                url_params = Object.fromEntries(raw_params.split('&').map(pair => {
+                            const [key, value] = pair.split('=');
+                            return [key, decodeURIComponent(value)]; // 解码 URL 编码的值
+                        })
+                );
+            }
         }
 
         let request_data;
         if (raw_data) {
-            request_data = JSON.parse(raw_data);
+            try {
+                request_data = JSON.parse(raw_data);
+            } catch (e) {
+                request_data = Object.fromEntries(raw_data.split('&').map(pair => {
+                            const [key, value] = pair.split('=');
+                            return [key, decodeURIComponent(value)]; // 解码 URL 编码的值
+                        })
+                );
+            }
+
         }
 
         // 暂存数据
@@ -182,7 +199,7 @@
             }
             try {
                 const res = await axios.get("/listen");
-                console.log(res.data.current_status.message, res.data.current_status.response);
+                console.log(res.data.current_status.message, "\n\n当前状态：", res.data.current_status.response, "\n\n第一状态：", res.data.first_status.response);
             } catch (error) {
                 console.error("Error: ", error);
             }

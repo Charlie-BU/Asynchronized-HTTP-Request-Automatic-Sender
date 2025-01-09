@@ -6,6 +6,7 @@ import aiohttp
 # 全局变量
 count = 0  # 请求次数
 current_status = ""  # 当前状态
+first_status = ""  # 第一状态
 lock = asyncio.Lock()  # 创建一个锁
 
 
@@ -20,13 +21,13 @@ def prepare_data(cookies, url_params, request_data):
 
 
 # 必须用函数才能在app.py正确获取到current_status实时更新的值
-def get_current_status():
-    return current_status
+def get_status():
+    return [current_status, first_status]
 
 
 # 发起一次请求
 async def single_request(session, request_url, url_params=None, request_data=None, request_type="GET"):
-    global count, current_status
+    global count, current_status, first_status
     try:
         # 将请求类型转换为小写，确保一致性
         request_type = request_type.lower()
@@ -51,6 +52,8 @@ async def single_request(session, request_url, url_params=None, request_data=Non
                     "message": f"已发送请求：{count}次",
                     "response": res,
                 }
+                if count == 1:
+                    first_status = current_status
         else:
             raise ValueError(f"Unsupported request type: {request_type}")
     except Exception as e:
@@ -62,8 +65,9 @@ async def single_request(session, request_url, url_params=None, request_data=Non
 
 # 异步发起多次请求
 async def operate_task(request_url, cookies, request_type, url_params, request_data):
-    global count
+    global count, current_status, first_status
     count = 0
+    current_status = first_status = ""
     async with aiohttp.ClientSession(cookies=cookies, connector=aiohttp.TCPConnector(ssl=False)) as session:
         while True:
             tasks = [asyncio.create_task(single_request(session, request_url, url_params, request_data, request_type))
