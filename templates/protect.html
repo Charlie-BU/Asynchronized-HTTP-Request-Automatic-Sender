@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抢票/抢购/抢课程序</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1>抢票/抢购/抢课程序</h1>
+    <div id="courseForm">
+        <div class="form-group">
+            <label for="pwd">请输入密码</label>
+            <input type="password" id="pwd" name="pwd">
+        </div>
+        <button onclick="confirm()">确定</button>
+    </div>
+</div>
+</body>
+
+<script>
+    const confirm = async () => {
+        const pwd = document.getElementById("pwd").value;
+        const res = await axios.post("/login", { "pwd": pwd })
+        if (res.data.status !== 200) {
+            localStorage.setItem("mySession", "");
+            alert(res.data.message);
+            return;
+        }
+        localStorage.setItem("mySession", "NJBinbUBEU*&YDUbu^@HnjBUE51scin");
+        window.location.href = "index";
+    }
+</script>
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(#ff9a9e, #fad0c4, #fbc2eb);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 900px;
+        margin: 0;
+    }
+
+    .container {
+        background: rgba(106, 17, 203, 0.3);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 6px 12px rgba(106, 17, 203, 0.3);
+        width: 350px;
+        height: auto;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 25px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    input[type="password"],
+    input[type="checkbox"] {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        box-sizing: border-box;
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #333;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        background-color: #2575fc;
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+        background-color: #6a11cb;
+        transform: translateY(-2px);
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>

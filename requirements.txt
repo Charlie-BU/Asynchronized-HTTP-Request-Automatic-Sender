@@ -1,0 +1,4 @@
+robyn~=0.64.2
+aiohttp
+jinja2
+pandas

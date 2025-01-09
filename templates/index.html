@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抢票/抢购/抢课程序</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1>抢票/抢购/抢课程序</h1>
+    <div id="courseForm">
+        <div class="form-group">
+            <label for="raw_url">请求URL</label>
+            <input type="text" id="raw_url" name="raw_url" required>
+        </div>
+
+        <div class="form-group">
+            <label for="raw_cookies">Cookies（字符串）</label>
+            <textarea
+                    id="raw_cookies"
+                    name="raw_cookies"
+                    placeholder='eg. JSESSIONID=C3B2A6365F54DAFC60A28AAC3664C0C2; sessionid=a1d7b67966724cb1b181ecb65d82ca11'
+                    rows="5"
+            ></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>请求类型</label>
+            <label for="get_type">
+                <input type="radio" id="get_type" name="request_type" value="get" checked> GET
+            </label>
+            <label for="post_type">
+                <input type="radio" id="post_type" name="request_type" value="post"> POST
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label for="raw_params">URL参数（必须为 JSON 格式字符串）</label>
+            <textarea
+                    id="raw_params"
+                    name="raw_params"
+                    placeholder='eg. {key: value}'
+                    rows="5"
+            ></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="raw_data">请求Data（必须为 JSON 格式字符串）</label>
+            <textarea
+                    id="raw_data"
+                    name="raw_data"
+                    placeholder='eg. {key: value}'
+                    rows="5"
+            ></textarea>
+        </div>
+
+        <button onclick="save()">保存</button>
+        <div id="buttons"></div>    <!-- 按钮将由 JavaScript 动态渲染 -->
+    </div>
+
+</div>
+</body>
+
+<script>
+    let stopped = true;
+    let intervalId;
+    let all_data;
+
+    const renderButtons = () => {
+        const buttonsContainer = document.getElementById('buttons');
+        buttonsContainer.innerHTML = stopped
+                ? `<button id="start_button" onclick="start()" style="margin-top: 15px; background: #6CCF70;">开始</button>`
+                : `<button id="stop_button" onclick="stop()" style="margin-top: 15px; background: red;">停止</button>`;
+    };
+    // 初始化按钮
+    renderButtons();
+
+    const login_required = () => {
+        const authoried = localStorage.getItem("mySession") === "NJBinbUBEU*&YDUbu^@HnjBUE51scin";
+        if (!authoried) {
+            alert("请验证身份");
+            window.location.href = "/";
+            return false;
+        }
+        return true;
+    }
+
+    const save = async () => {
+        if (login_required() === false) return;
+        if (!stopped) {
+            alert("任务正在进行，请先结束任务");
+            return;
+        }
+        // 获取表单值
+        const raw_url = document.getElementById('raw_url').value;
+        const raw_cookies = document.getElementById('raw_cookies').value;
+        const raw_params = document.getElementById('raw_params').value;
+        const raw_data = document.getElementById('raw_data').value;
+        if (!raw_url) {
+            alert("请填写完整信息");
+            return;
+        }
+        // 处理数据
+        const request_url = raw_url + '/';
+
+        let cookies;
+        if (raw_cookies) {
+            const cookiePairs = raw_cookies.split(';').map(item => item.trim().split('='));
+            cookies = {};
+            cookiePairs.forEach(([key, value]) => {
+                if (key && value) {
+                    cookies[key] = value;
+                }
+            });
+        }
+
+        let request_type = document.querySelector('input[name="request_type"]:checked').value;
+
+        let url_params;
+        if (raw_params) {
+            url_params = JSON.parse(raw_params);
+        }
+
+        let request_data;
+        if (raw_data) {
+            request_data = JSON.parse(raw_data);
+        }
+
+        // 暂存数据
+        all_data = {
+            "request_url": request_url,
+            "cookies": cookies,
+            "request_type": request_type,
+            "url_params": url_params,
+            "request_data": request_data,
+        };
+        console.log(all_data);
+        alert("数据保存成功")
+    };
+
+    const start = async () => {
+        if (login_required() === false) return;
+        if (!stopped) return;
+        if (!all_data) {
+            alert("请先保存数据");
+            return;
+        }
+        const res = await axios.post("/start", {
+            "request_url": all_data.request_url,
+            "cookies": all_data.cookies,
+            "request_type": all_data.request_type,
+            "url_params": all_data.url_params,
+            "request_data": all_data.request_data,
+        });
+        console.log(res.data);
+        alert(res.data.message);
+        if (res.data.status === 200) {
+            stopped = false;
+            renderButtons();
+            await listen();
+        }
+    }
+
+    const stop = async () => {
+        if (login_required() === false) return;
+        if (stopped) return;
+        const res = await axios.post("/stop");
+        console.log(res.data);
+        stopped = true;
+        renderButtons();
+        all_data = null;
+        alert(res.data.message);
+    }
+
+    const listen = async () => {
+        if (login_required() === false) return;
+        intervalId = setInterval(async () => {
+            if (stopped) {
+                clearInterval(intervalId); // 停止定时器
+                return;
+            }
+            try {
+                const res = await axios.get("/listen");
+                console.log(res.data.current_status.message, res.data.current_status.response);
+            } catch (error) {
+                console.error("Error: ", error);
+            }
+        }, 1000);
+    };
+</script>
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(#ff9a9e, #fad0c4, #fbc2eb);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 900px;
+        margin: 0;
+    }
+
+    .container {
+        background: rgba(106, 17, 203, 0.3);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 6px 12px rgba(106, 17, 203, 0.3);
+        width: 350px;
+        height: auto;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 25px;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    input[type="text"],
+    textarea {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        box-sizing: border-box;
+        background-color: rgba(255, 255, 255, 0.8);
+        color: #333;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        background-color: #2575fc;
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+        background-color: #6a11cb;
+        transform: translateY(-2px);
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
